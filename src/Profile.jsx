@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { EXERCISES } from './exercises.js'
-import { RANKS, bestByExercise, fmtMax, rankIndex, topPercent } from './ranks.js'
+import { RANKS, bestByExercise, fmtLogged, fmtMax, rankIndex, toKg, topPercent } from './ranks.js'
+import Chart from './Chart.jsx'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
 
@@ -32,6 +33,80 @@ function Heatmap({ lifts }) {
   )
 }
 
+// One chart card: latest value, change since the first entry, and the line.
+function Trend({ title, points, fmt, unit }) {
+  const first = points[0].kg, latest = points[points.length - 1].kg
+  return (
+    <div className="card trend">
+      <p className="label">{title}</p>
+      <div className="trendval">{fmt(latest)}
+        {points.length > 1 && <small className="dim">{latest >= first ? '+' : '−'}{fmtLogged(Math.abs(latest - first), unit)} since first entry</small>}
+      </div>
+      <Chart points={points} fmt={fmt} />
+    </div>
+  )
+}
+
+function Progress({ lifts, unit }) {
+  // Best estimated max per exercise per day.
+  const byEx = {}
+  for (const l of lifts) {
+    const days = (byEx[l.exercise_id] ??= {})
+    if (!(days[l.performed_on] >= l.e1rm_kg)) days[l.performed_on] = +l.e1rm_kg
+  }
+  const shown = EXERCISES.filter((e) => byEx[e.id])
+  return (
+    <>
+      <h2 className="section">Progress</h2>
+      {!shown.length && <div className="card"><p className="dim">Log a lift and its chart appears here.</p></div>}
+      <div className="charts">
+        {shown.map((e) => <Trend key={e.id} title={e.name} unit={unit} fmt={(kg) => fmtMax(kg, unit)}
+          points={Object.entries(byEx[e.id]).sort(([a], [b]) => a.localeCompare(b)).map(([date, kg]) => ({ date, kg }))} />)}
+      </div>
+    </>
+  )
+}
+
+function BodyWeight({ unit }) {
+  const [rows, setRows] = useState([])
+  const [value, setValue] = useState('')
+  const [error, setError] = useState('')
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.from('bodyweights').select('measured_on, weight_kg').order('measured_on')
+    if (error) setError(error.message)
+    else setRows(data)
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  async function save(e) {
+    e.preventDefault()
+    setError('')
+    // One entry per day: saving again today replaces today's value.
+    const { error } = await supabase.from('bodyweights')
+      .upsert({ measured_on: iso(new Date()), weight_kg: +toKg(parseFloat(value), unit).toFixed(2) }, { onConflict: 'user_id,measured_on' })
+    if (error) return setError(error.message)
+    setValue('')
+    load()
+  }
+
+  const fmt = (kg) => fmtLogged(kg, unit)
+  return (
+    <div className="card">
+      <h2>Body weight</h2>
+      <form className="bwform" onSubmit={save}>
+        <input type="number" inputMode="decimal" step="any" min={unit === 'lb' ? 45 : 20} max={unit === 'lb' ? 880 : 400}
+          placeholder={`Today's weight (${unit})`} aria-label={`Today's body weight in ${unit}`} value={value} onChange={(e) => setValue(e.target.value)} required />
+        <button className="primary">Save</button>
+      </form>
+      {error && <p className="error" role="alert">{error}</p>}
+      {rows.length > 0 && <div className="trend bw">
+        <div className="trendval">{fmt(rows[rows.length - 1].weight_kg)}</div>
+        <Chart points={rows.map((r) => ({ date: r.measured_on, kg: +r.weight_kg }))} fmt={fmt} />
+      </div>}
+    </div>
+  )
+}
+
 export default function Profile({ profile, lifts, unit }) {
   const best = bestByExercise(lifts)
   const logged = EXERCISES.filter((e) => best[e.id]).map((e) => ({ ...e, rank: rankIndex(e[profile.sex], best[e.id]) }))
@@ -59,6 +134,10 @@ export default function Profile({ profile, lifts, unit }) {
         <h2>Activity</h2>
         <Heatmap lifts={lifts} />
       </div>
+
+      <BodyWeight unit={unit} />
+
+      <Progress lifts={lifts} unit={unit} />
 
       <div className="card">
         <h2>Personal bests</h2>

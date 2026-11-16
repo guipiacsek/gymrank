@@ -162,3 +162,20 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .heat i[data-l='4'] { background: #ff4d57; }
 .heat + p { font-size: 0.85rem; margin-top: 10px; }
 .credit { font-size: 0.72rem; text-align: center; color: var(--faint); margin-top: 20px; }
+
+/* Progress charts: one red series, recessive axes, text in neutral ink. */
+h2.section { margin: 28px 4px 12px; }
+.charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.charts .card { margin: 0; }
+.trendval { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.trendval small { font-weight: 400; letter-spacing: 0; }
+.trend.bw { margin-top: 18px; }
+.chart { display: block; width: 100%; height: auto; margin-top: 8px; touch-action: pan-y; }
+.chart .axis { stroke: var(--line); stroke-width: 1; }
+.chart .cross { stroke: rgba(255, 255, 255, 0.25); }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.chart .tick { fill: var(--faint); font-size: 10px; font-variant-numeric: tabular-nums; }
+.chart .tip { fill: var(--text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bwform { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.bwform button { padding: 0 24px; }
