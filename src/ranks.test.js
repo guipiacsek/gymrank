@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { fmtCompact, milestone, THINGS, massCompare, totalVolume, e1rm, rankIndex, percentile, topPercent, bestByExercise, fmtMax, fmtGoal, toKg } from './ranks.js'
+import { streaks, fmtCompact, milestone, THINGS, massCompare, totalVolume, e1rm, rankIndex, percentile, topPercent, bestByExercise, fmtMax, fmtGoal, toKg } from './ranks.js'
 import { EXERCISES, MUSCLES } from './exercises.js'
 
 const bench = EXERCISES.find((e) => e.id === 'bench-press').m // [50, 70, 95, 127.5, 160]
@@ -23,6 +23,15 @@ test('totalVolume and massCompare', () => {
   assert.equal(massCompare(6000), 'an African elephant')
   assert.equal(massCompare(80000000), 'the Titanic')
   assert.equal(massCompare(250000000), '2 Nimitz aircraft carriers')
+})
+
+test('streaks count weeks in a row, Monday to Sunday', () => {
+  // 2026-11-16 is a Monday. Weeks with workouts: Nov 9–15, Nov 2–8, then a gap, then Oct 20, 13, 6.
+  const dates = ['2026-11-15', '2026-11-10', '2026-11-03', '2026-10-20', '2026-10-13', '2026-10-06']
+  assert.deepEqual(streaks(dates, '2026-11-16'), { current: 2, best: 3, days: 0 }) // this week not trained yet, streak still alive
+  assert.deepEqual(streaks([...dates, '2026-11-16', '2026-11-16'], '2026-11-16'), { current: 3, best: 3, days: 1 })
+  assert.equal(streaks(dates, '2026-11-30').current, 0) // a full week missed breaks it
+  assert.deepEqual(streaks([], '2026-11-16'), { current: 0, best: 0, days: 0 })
 })
 
 test('milestone', () => {

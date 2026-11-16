@@ -67,6 +67,20 @@ export function milestone(kg) {
   return { i, next, pct: (kg / next.kg) * 100, mark: i < 0 ? 0 : (THINGS[i].kg / next.kg) * 100 }
 }
 
+// Weeks run Monday to Sunday. 1970-01-01 was a Thursday, so shifting by 3 days puts week edges on Mondays.
+const week = (iso) => { const [y, m, d] = iso.split('-'); return Math.floor((Date.UTC(y, m - 1, d) / 864e5 + 3) / 7) }
+
+// Streak = weeks in a row with at least one workout. This week still counts as alive until it ends.
+export function streaks(dates, today) {
+  const weeks = new Set(dates.map(week))
+  const now = week(today)
+  let current = 0
+  for (let w = weeks.has(now) ? now : now - 1; weeks.has(w); w--) current++
+  let best = 0, run = 0, prev = -Infinity
+  for (const w of [...weeks].sort((a, b) => a - b)) { run = w === prev + 1 ? run + 1 : 1; best = Math.max(best, run); prev = w }
+  return { current, best, days: new Set(dates.filter((d) => week(d) === now)).size }
+}
+
 // t = the exercise's 5 thresholds for the user's sex. Anything below Novice is Beginner.
 export function rankIndex(t, kg) {
   let i = 0

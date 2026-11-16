@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { EXERCISES, MUSCLES, byId } from './exercises.js'
-import { RANKS, bestByExercise, fmtGoal, fmtLogged, fmtMax, rankIndex, toKg, topPercent } from './ranks.js'
+import { RANKS, bestByExercise, fmtGoal, fmtLogged, fmtMax, rankIndex, toKg, toUnit, topPercent } from './ranks.js'
 import Badge from './Badge.jsx'
 import Icon from './Icon.jsx'
 
@@ -44,37 +44,52 @@ export default function Lift({ profile, lifts, unit, reload }) {
 
 function Detail({ ex, sex, lifts, best, unit, reload, back }) {
   const t = ex[sex]
-  const [weight, setWeight] = useState('')
-  const [reps, setReps] = useState('')
-  const [sets, setSets] = useState('1')
+  const asInput = (kg) => String(+toUnit(kg, unit).toFixed(unit === 'lb' ? 1 : 2))
+  const last = lifts[0] // newest first: start from what was done last time
+  const [weight, setWeight] = useState(last ? asInput(last.weight_kg) : '')
+  const [reps, setReps] = useState(last ? String(last.reps) : '')
+  const [sets, setSets] = useState(String(last?.sets ?? 1))
   const [date, setDate] = useState(null) // null = today, worked out when needed so it doesn't go stale past midnight
-  const [dbs, setDbs] = useState(2) // dumbbell exercises: one or two dumbbells (Total lifted counts both)
+  const [dbs, setDbs] = useState(last?.dumbbells ?? 2) // dumbbell exercises: one or two dumbbells (Total lifted counts both)
+  const [editing, setEditing] = useState(null) // the entry being edited, or null when logging a new one
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
+  const form = useRef(null)
   const rank = best ? rankIndex(t, best) : null
   const next = rank != null && rank < 4 ? rank + 1 : null
+
+  function edit(l) {
+    setEditing(l); setMsg(null)
+    setWeight(asInput(l.weight_kg)); setReps(String(l.reps)); setSets(String(l.sets ?? 1)); setDbs(l.dumbbells ?? 2); setDate(l.performed_on)
+    form.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  const stopEditing = () => { setEditing(null); setDate(null) }
 
   async function log(e) {
     e.preventDefault()
     setBusy(true); setMsg(null)
-    const kg = +toKg(parseFloat(weight), unit).toFixed(2)
+    const row = { weight_kg: +toKg(parseFloat(weight), unit).toFixed(2), reps: +reps, sets: +sets, dumbbells: ex.db ? dbs : 1, performed_on: date ?? today() }
     // The database works out the estimated max; read it back so the message matches the leaderboard exactly.
-    const { data, error } = await supabase.from('lifts')
-      .insert({ exercise_id: ex.id, weight_kg: kg, reps: +reps, sets: +sets, dumbbells: ex.db ? dbs : 1, performed_on: date ?? today() })
-      .select('e1rm_kg').single()
+    const { data, error } = editing
+      ? await supabase.from('lifts').update(row).eq('id', editing.id).select('e1rm_kg').single()
+      : await supabase.from('lifts').insert({ ...row, exercise_id: ex.id }).select('e1rm_kg').single()
     if (error) setMsg({ bad: true, text: error.message })
-    else {
+    else if (editing) {
+      setMsg({ text: 'Saved.' })
+      stopEditing()
+      await reload()
+    } else {
       const est = +data.e1rm_kg
       const up = rankIndex(t, est) > (rank ?? -1) && rankIndex(t, est) > 0
       setMsg({ text: !(best >= est) ? (up ? `New rank: ${RANKS[rankIndex(t, est)].name}!` : 'New personal best!') : 'Logged.' })
-      setWeight(''); setReps('')
-      await reload()
+      await reload() // the fields stay filled, so the same set again is one tap
     }
     setBusy(false)
   }
 
   async function remove(id) {
     if (!confirm('Delete this entry?')) return
+    if (editing?.id === id) stopEditing()
     const { error } = await supabase.from('lifts').delete().eq('id', id)
     if (error) setMsg({ bad: true, text: error.message })
     await reload()
@@ -95,7 +110,9 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
         </div>
       </div>
 
-      <form className="card logform" onSubmit={log}>
+      <form className={`card logform${editing ? ' editing' : ''}`} onSubmit={log} ref={form}>
+        {editing && <p className="editnote">Editing the {short(editing.performed_on)} entry
+          <button type="button" className="ghost" onClick={stopEditing}>Cancel</button></p>}
         <label>Weight ({unit})
           <input type="number" inputMode="decimal" step="any" min="0.5" max={unit === 'lb' ? 2200 : 1000} value={weight} onChange={(e) => setWeight(e.target.value)} required />
         </label>
@@ -113,7 +130,7 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
             <button type="button" key={n} className={dbs === n ? 'on' : ''} onClick={() => setDbs(n)}>{label}</button>
           ))}
         </div>}
-        <button className="primary" disabled={busy}>{busy ? 'Saving…' : 'Log set'}</button>
+        <button className="primary" disabled={busy}>{busy ? 'Saving…' : editing ? 'Save changes' : 'Log set'}</button>
         {msg && <p className={msg.bad ? 'error' : 'ok'} role="status">{msg.text}</p>}
       </form>
 
@@ -136,11 +153,14 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
         {!lifts.length && <p className="dim">Nothing logged yet.</p>}
         <ul className="rows">
           {lifts.map((l) => (
-            <li key={l.id}>
+            <li key={l.id} className={editing?.id === l.id ? 'on' : ''}>
               <span className="dim when">{short(l.performed_on)}</span>
               <span>{l.sets > 1 && `${l.sets} × `}{l.reps} · {fmtLogged(l.weight_kg, unit)}{l.dumbbells === 2 && ' ×2'}</span>
               <span className="dim">≈ {fmtMax(l.e1rm_kg, unit)}</span>
-              <button className="ghost" onClick={() => remove(l.id)} aria-label={`Delete entry from ${l.performed_on}`}>✕</button>
+              <span className="acts">
+                <button className="ghost" onClick={() => edit(l)} aria-label={`Edit entry from ${l.performed_on}`}>Edit</button>
+                <button className="ghost" onClick={() => remove(l.id)} aria-label={`Delete entry from ${l.performed_on}`}>✕</button>
+              </span>
             </li>
           ))}
         </ul>

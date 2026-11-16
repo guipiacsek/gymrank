@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { EXERCISES } from './exercises.js'
-import { RANKS, THINGS, fmtCompact, milestone, bestByExercise, fmtLogged, fmtMax, fmtTotal, massCompare, rankIndex, toKg, topPercent, totalVolume } from './ranks.js'
+import { RANKS, THINGS, streaks, fmtCompact, milestone, bestByExercise, fmtLogged, fmtMax, fmtTotal, massCompare, rankIndex, toKg, topPercent, totalVolume } from './ranks.js'
 import Chart from './Chart.jsx'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
@@ -19,9 +19,15 @@ function Heatmap({ lifts }) {
   const days = []
   for (; d <= end; d.setDate(d.getDate() + 1)) days.push(iso(d))
   const active = days.filter((k) => counts[k])
+  const s = streaks(Object.keys(counts), iso(end))
 
   return (
     <>
+      <div className="streaks">
+        <div><b>{s.current}</b><small>week streak</small></div>
+        <div><b>{s.best}</b><small>best streak</small></div>
+        <div><b>{s.days}</b><small>day{s.days === 1 ? '' : 's'} this week</small></div>
+      </div>
       <div className="heat" ref={box}>
         {days.map((k) => {
           const n = counts[k] || 0
