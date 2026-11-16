@@ -16,9 +16,10 @@ export const fmtMax = (kg, unit) => `${Math.floor(toUnit(kg, unit) + 1e-6)} ${un
 export const fmtGoal = (kg, unit) => `${Math.ceil(toUnit(kg, unit) - 1e-6)} ${unit}`
 export const fmtLogged = (kg, unit) => `${+toUnit(kg, unit).toFixed(1)} ${unit}`
 
-// Epley estimate; a single rep is the lift itself. Reps count up to 20 only: past that the formula
-// stops tracking strength, so a 60-rep machine set doesn't inflate the max. Must match setup SQL.
-export const e1rm = (kg, reps) => (reps === 1 ? kg : kg * (1 + Math.min(reps, 20) / 30))
+// Epley estimate; a single rep is the lift itself. Epley stops tracking strength at high reps, so reps
+// 1-20 count fully, 21-30 count half, and anything past 30 adds nothing. Must match 004-rep-credit.sql.
+export const effectiveReps = (reps) => Math.min(reps, 20) + Math.max(Math.min(reps, 30) - 20, 0) / 2
+export const e1rm = (kg, reps) => (reps === 1 ? kg : kg * (1 + effectiveReps(reps) / 30))
 
 export const fmtTotal = (kg, unit) => `${Math.round(toUnit(kg, unit)).toLocaleString('en-US')} ${unit}`
 

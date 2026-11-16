@@ -8,7 +8,9 @@ const bench = EXERCISES.find((e) => e.id === 'bench-press').m // [50, 70, 95, 12
 test('e1rm', () => {
   assert.equal(e1rm(100, 1), 100)
   assert.equal(e1rm(90, 10), 120)
-  assert.equal(e1rm(100, 60), e1rm(100, 20)) // high-rep sets are capped
+  assert.equal(e1rm(100, 20), 100 * (1 + 20 / 30)) // full credit up to 20
+  assert.equal(e1rm(100, 26), 100 * (1 + 23 / 30)) // half credit for reps 21-30
+  assert.equal(e1rm(100, 60), e1rm(100, 30)) // nothing past 30
 })
 
 test('totalVolume and massCompare', () => {
