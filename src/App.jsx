@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
-import { RANKS, e1rm } from './ranks.js'
-import Auth from './Auth.jsx'
+import { e1rm } from './ranks.js'
+import { fetchAll } from './fetchAll.js'
+import Auth, { NewPassword } from './Auth.jsx'
 import Lift from './Lift.jsx'
 import Leaderboard from './Leaderboard.jsx'
 import Profile from './Profile.jsx'
 import { applyTheme } from './theme.js'
-
-export const Badge = ({ rank }) => <span className="badge" style={{ '--c': RANKS[rank].color }}>{RANKS[rank].name}</span>
 
 // Dev-only (localhost/?demo): the real screens with sample data and no login, for checking the design.
 const DEMO = import.meta.env.DEV && location.search === '?demo'
@@ -19,10 +18,22 @@ const DEMO_LIFTS = !DEMO ? [] : [['bench-press', 100, 5], ['squat', 140, 3], ['d
   return { id: i * 10 + j, exercise_id, weight_kg: kg - j * 5, reps, sets: 3, e1rm_kg: e1rm(kg - j * 5, reps), performed_on: d.toLocaleDateString('en-CA') }
 }))
 
+// Supabase reports a failed email link (used, expired) in the address: #error=...&error_description=...
+// Read it once, then clean the address so a refresh doesn't show it again.
+function linkError() {
+  const p = new URLSearchParams(location.hash.slice(1))
+  if (!p.get('error')) return ''
+  history.replaceState(null, '', location.pathname + location.search)
+  const why = p.get('error_description') || 'That email link did not work.'
+  return p.get('error_code') === 'otp_expired' ? `${why}. If you already confirmed your email, just log in.` : why
+}
+
 const TABS = [['lift', 'Lift'], ['board', 'Leaderboard'], ['profile', 'Profile']]
 
 export default function App() {
   const [session, setSession] = useState(undefined) // undefined while the saved login is being restored
+  const [notice] = useState(linkError)
+  const [recovery, setRecovery] = useState(false) // arrived from a password reset link
   const [profile, setProfile] = useState(DEMO ? DEMO_PROFILE : null)
   const [lifts, setLifts] = useState(DEMO_LIFTS)
   const [error, setError] = useState('')
@@ -37,17 +48,19 @@ export default function App() {
   useEffect(() => {
     if (DEMO) return
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s))
+    const { data } = supabase.auth.onAuthStateChange((event, s) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true)
+      setSession(s)
+    })
     return () => data.subscription.unsubscribe()
   }, [])
 
   const uid = session?.user.id
-  // shortcut: loads the newest 1000 lifts (Supabase's page size) and derives maxes and the heatmap in the browser;
-  // move those to SQL views once a user can pass 1000 logged sets.
+  // All of the user's entries; maxes, totals, charts and the heatmap are worked out from them in the browser.
   const loadLifts = useCallback(async () => {
-    const { data, error } = await supabase.from('lifts')
-      .select('id, exercise_id, weight_kg, reps, sets, e1rm_kg, performed_on')
-      .order('performed_on', { ascending: false }).order('id', { ascending: false })
+    const { data, error } = await fetchAll((from, to) => supabase.from('lifts')
+      .select('id, exercise_id, weight_kg, reps, sets, dumbbells, e1rm_kg, performed_on')
+      .order('performed_on', { ascending: false }).order('id', { ascending: false }).range(from, to))
     if (error) setError(error.message)
     else setLifts(data)
   }, [])
@@ -62,7 +75,8 @@ export default function App() {
   }, [uid, loadLifts])
 
   if (!DEMO && session === undefined) return <div className="center dim">Loading…</div>
-  if (!DEMO && !session) return <Auth />
+  if (!DEMO && !session) return <Auth notice={notice} />
+  if (recovery) return <NewPassword done={() => setRecovery(false)} />
 
   return (
     <div className="app">

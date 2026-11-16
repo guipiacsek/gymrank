@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { supabase } from './supabase.js'
 import { EXERCISES, MUSCLES, byId } from './exercises.js'
-import { RANKS, bestByExercise, e1rm, fmtGoal, fmtLogged, fmtMax, rankIndex, toKg, topPercent } from './ranks.js'
-import { Badge } from './App.jsx'
+import { RANKS, bestByExercise, fmtGoal, fmtLogged, fmtMax, rankIndex, toKg, topPercent } from './ranks.js'
+import Badge from './Badge.jsx'
 import Icon from './Icon.jsx'
 
 const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
@@ -47,7 +47,8 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
   const [sets, setSets] = useState('1')
-  const [date, setDate] = useState(today)
+  const [date, setDate] = useState(null) // null = today, worked out when needed so it doesn't go stale past midnight
+  const [dbs, setDbs] = useState(2) // dumbbell exercises: one or two dumbbells (Total lifted counts both)
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
   const rank = best ? rankIndex(t, best) : null
@@ -57,10 +58,13 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
     e.preventDefault()
     setBusy(true); setMsg(null)
     const kg = +toKg(parseFloat(weight), unit).toFixed(2)
-    const { error } = await supabase.from('lifts').insert({ exercise_id: ex.id, weight_kg: kg, reps: +reps, sets: +sets, performed_on: date })
+    // The database works out the estimated max; read it back so the message matches the leaderboard exactly.
+    const { data, error } = await supabase.from('lifts')
+      .insert({ exercise_id: ex.id, weight_kg: kg, reps: +reps, sets: +sets, dumbbells: ex.db ? dbs : 1, performed_on: date ?? today() })
+      .select('e1rm_kg').single()
     if (error) setMsg({ bad: true, text: error.message })
     else {
-      const est = e1rm(kg, +reps)
+      const est = +data.e1rm_kg
       const up = rankIndex(t, est) > (rank ?? -1) && rankIndex(t, est) > 0
       setMsg({ text: !(best >= est) ? (up ? `New rank: ${RANKS[rankIndex(t, est)].name}!` : 'New personal best!') : 'Logged.' })
       setWeight(''); setReps('')
@@ -102,8 +106,13 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
           <input type="number" inputMode="numeric" step="1" min="1" max="20" value={sets} onChange={(e) => setSets(e.target.value)} required />
         </label>
         <label>Date
-          <input type="date" value={date} max={today()} min="2000-01-01" onChange={(e) => setDate(e.target.value)} required />
+          <input type="date" value={date ?? today()} max={today()} min="2000-01-01" onChange={(e) => setDate(e.target.value)} required />
         </label>
+        {ex.db && <div className="seg dbs" role="group" aria-label="Dumbbells used">
+          {[[1, 'One dumbbell'], [2, 'Two dumbbells']].map(([n, label]) => (
+            <button type="button" key={n} className={dbs === n ? 'on' : ''} onClick={() => setDbs(n)}>{label}</button>
+          ))}
+        </div>}
         <button className="primary" disabled={busy}>{busy ? 'Saving…' : 'Log set'}</button>
         {msg && <p className={msg.bad ? 'error' : 'ok'} role="status">{msg.text}</p>}
       </form>
@@ -129,7 +138,7 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
           {lifts.map((l) => (
             <li key={l.id}>
               <span className="dim when">{short(l.performed_on)}</span>
-              <span>{l.sets > 1 && `${l.sets} × `}{l.reps} · {fmtLogged(l.weight_kg, unit)}</span>
+              <span>{l.sets > 1 && `${l.sets} × `}{l.reps} · {fmtLogged(l.weight_kg, unit)}{l.dumbbells === 2 && ' ×2'}</span>
               <span className="dim">≈ {fmtMax(l.e1rm_kg, unit)}</span>
               <button className="ghost" onClick={() => remove(l.id)} aria-label={`Delete entry from ${l.performed_on}`}>✕</button>
             </li>

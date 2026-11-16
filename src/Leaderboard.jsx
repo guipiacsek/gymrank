@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
 import { EXERCISES, byId } from './exercises.js'
 import { fmtMax, rankIndex } from './ranks.js'
-import { Badge } from './App.jsx'
+import Badge from './Badge.jsx'
 import Icon from './Icon.jsx'
 
 export default function Leaderboard({ profile, uid, unit }) {

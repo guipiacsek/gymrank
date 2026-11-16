@@ -16,6 +16,7 @@ test('e1rm', () => {
 test('totalVolume and massCompare', () => {
   // 5 sets of 10 at 100 kg, plus an old row with no sets column
   assert.equal(totalVolume([{ weight_kg: 100, reps: 10, sets: 5 }, { weight_kg: '20', reps: 3 }]), 5060)
+  assert.equal(totalVolume([{ weight_kg: 20, reps: 10, sets: 3, dumbbells: 2 }]), 1200) // both dumbbells count
   assert.equal(massCompare(10), null)
   assert.equal(massCompare(30), 'a golden retriever')
   assert.equal(massCompare(4600), '3 cars')

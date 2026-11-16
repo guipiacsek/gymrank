@@ -17,7 +17,8 @@ export const fmtGoal = (kg, unit) => `${Math.ceil(toUnit(kg, unit) - 1e-6)} ${un
 export const fmtLogged = (kg, unit) => `${+toUnit(kg, unit).toFixed(1)} ${unit}`
 
 // Epley estimate; a single rep is the lift itself. Epley stops tracking strength at high reps, so reps
-// 1-20 count fully, 21-30 count half, and anything past 30 adds nothing. Must match 004-rep-credit.sql.
+// 1-20 count fully, 21-30 count half, and anything past 30 adds nothing. The database's e1rm_kg column
+// (004-rep-credit.sql) is the real one; this copy only builds the dev demo data and documents the rule.
 export const effectiveReps = (reps) => Math.min(reps, 20) + Math.max(Math.min(reps, 30) - 20, 0) / 2
 export const e1rm = (kg, reps) => (reps === 1 ? kg : kg * (1 + effectiveReps(reps) / 30))
 
@@ -25,8 +26,8 @@ export const fmtTotal = (kg, unit) => `${Math.round(toUnit(kg, unit)).toLocaleSt
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
 export const fmtCompact = (kg, unit) => { const v = toUnit(kg, unit); return `${v < 1000 ? Math.round(v) : compact.format(v)} ${unit}` } // 6,547,721 -> "6.5M lb"
 
-// Total mass moved: weight × reps × sets over every logged entry.
-export const totalVolume = (lifts) => lifts.reduce((sum, l) => sum + l.weight_kg * l.reps * (l.sets ?? 1), 0)
+// Total mass moved: weight × reps × sets × dumbbells over every logged entry.
+export const totalVolume = (lifts) => lifts.reduce((sum, l) => sum + l.weight_kg * l.reps * (l.sets ?? 1) * (l.dumbbells ?? 1), 0)
 
 // Rough real-world masses in kg, lightest first. These are the Total lifted milestones.
 export const THINGS = [
