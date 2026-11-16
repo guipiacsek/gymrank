@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { EXERCISES } from './exercises.js'
-import { RANKS, bestByExercise, fmtLogged, fmtMax, fmtTotal, massCompare, rankIndex, toKg, topPercent, totalVolume } from './ranks.js'
+import { RANKS, THINGS, milestone, bestByExercise, fmtLogged, fmtMax, fmtTotal, massCompare, rankIndex, toKg, topPercent, totalVolume } from './ranks.js'
 import Chart from './Chart.jsx'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
@@ -68,13 +68,32 @@ function Progress({ lifts, unit }) {
 }
 
 function TotalLifted({ lifts, unit }) {
+  const [all, setAll] = useState(false)
   const kg = totalVolume(lifts)
   const like = massCompare(kg)
+  const { i, next, pct } = milestone(kg)
   return (
     <div className="card">
       <h2>Total lifted</h2>
       <div className="trendval">{fmtTotal(kg, unit)}</div>
       <p className="dim">{like ? <>That's the weight of <b>{like}</b>.</> : 'Every set you log adds weight × reps × sets here.'}</p>
+      {next ? <div className="mile">
+        <div className="milebar" role="progressbar" aria-label={`Progress to ${next.label}`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.floor(pct)}>
+          <i style={{ width: `${pct}%` }} />
+        </div>
+        <div className="mileends"><span>{i < 0 ? 'Start' : THINGS[i].label}</span><span>{next.label}</span></div>
+        <p className="dim">{fmtTotal(next.kg - kg, unit)} to go until {next.one}.</p>
+      </div> : <p className="dim">You've passed every milestone. Legend.</p>}
+      <button className="ghost seeall" onClick={() => setAll(!all)} aria-expanded={all}>{all ? 'Hide milestones' : 'See all milestones'}</button>
+      {all && <ol className="rows miles">
+        {THINGS.map((t, k) => (
+          <li key={t.label} className={k <= i ? 'done' : k === i + 1 ? 'next' : ''}>
+            <span className="name">{t.label}</span>
+            <span className="dim">{fmtTotal(t.kg, unit)}</span>
+            <span className="mark">{k <= i ? '✓' : k === i + 1 ? `${Math.floor(pct)}%` : ''}</span>
+          </li>
+        ))}
+      </ol>}
     </div>
   )
 }

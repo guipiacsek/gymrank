@@ -201,3 +201,19 @@ h2.section { margin: 28px 4px 12px; }
 .chart .tip { fill: var(--text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .bwform { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
 .bwform button { padding: 0 24px; }
+
+/* Total lifted milestones */
+.mile { margin-top: 18px; }
+.milebar { height: 8px; border-radius: 999px; background: var(--raised); overflow: hidden; }
+.milebar i { display: block; height: 100%; min-width: 8px; border-radius: 999px; background: var(--accent); transition: width 0.4s; }
+.mileends { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 0.8rem; color: var(--dim); }
+.mileends span:last-child { color: var(--text); font-weight: 600; }
+.mile p { font-size: 0.85rem; }
+.seeall { padding-left: 0; margin-top: 8px; margin-bottom: -10px; }
+.miles { margin-top: 12px; }
+.miles li { color: var(--faint); }
+.miles .done { color: var(--dim); }
+.miles .next { color: var(--text); font-weight: 600; }
+.miles .mark { min-width: 40px; text-align: right; }
+.miles .done .mark { color: var(--accent); }
+.miles li .dim { color: inherit; font-weight: 400; }

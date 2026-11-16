@@ -26,28 +26,37 @@ export const fmtTotal = (kg, unit) => `${Math.round(toUnit(kg, unit)).toLocaleSt
 // Total mass moved: weight × reps × sets over every logged entry.
 export const totalVolume = (lifts) => lifts.reduce((sum, l) => sum + l.weight_kg * l.reps * (l.sets ?? 1), 0)
 
-// Rough real-world masses in kg, lightest first.
-const THINGS = [
-  [30, 'a golden retriever', 'golden retrievers'],
-  [90, 'a fridge', 'fridges'],
-  [200, 'a motorcycle', 'motorcycles'],
-  [450, 'a grand piano', 'grand pianos'],
-  [1500, 'a car', 'cars'],
-  [6000, 'an African elephant', 'African elephants'],
-  [11000, 'a school bus', 'school buses'],
-  [36000, 'a loaded semi truck', 'loaded semi trucks'],
-  [150000, 'a blue whale', 'blue whales'],
-  [420000, 'the International Space Station', 'International Space Stations'],
-  [10100000, 'the Eiffel Tower', 'Eiffel Towers'],
-  [52000000, 'the Titanic', 'Titanics'],
-]
+// Rough real-world masses in kg, lightest first. These are the Total lifted milestones.
+export const THINGS = [
+  [30, 'Golden retriever', 'a golden retriever', 'golden retrievers'],
+  [90, 'Fridge', 'a fridge', 'fridges'],
+  [200, 'Motorcycle', 'a motorcycle', 'motorcycles'],
+  [450, 'Grand piano', 'a grand piano', 'grand pianos'],
+  [1500, 'Car', 'a car', 'cars'],
+  [6000, 'African elephant', 'an African elephant', 'African elephants'],
+  [11000, 'School bus', 'a school bus', 'school buses'],
+  [36000, 'Loaded semi truck', 'a loaded semi truck', 'loaded semi trucks'],
+  [150000, 'Blue whale', 'a blue whale', 'blue whales'],
+  [420000, 'Space Station', 'the International Space Station', 'International Space Stations'],
+  [10100000, 'Eiffel Tower', 'the Eiffel Tower', 'Eiffel Towers'],
+  [52000000, 'Titanic', 'the Titanic', 'Titanics'],
+].map(([kg, label, one, many]) => ({ kg, label, one, many }))
 
 // "3 cars" for 4,600 kg: the heaviest thing the total covers, and how many of it. null below the lightest.
 export function massCompare(kg) {
-  const t = THINGS.findLast(([m]) => kg >= m)
+  const t = THINGS.findLast((t) => kg >= t.kg)
   if (!t) return null
-  const n = Math.floor(kg / t[0])
-  return n === 1 ? t[1] : `${n.toLocaleString('en-US')} ${t[2]}`
+  const n = Math.floor(kg / t.kg)
+  return n === 1 ? t.one : `${n.toLocaleString('en-US')} ${t.many}`
+}
+
+// Where a total sits on the milestone ladder: index of the last one reached (-1 for none),
+// the next one (null past the last), and the percentage of the way between them.
+export function milestone(kg) {
+  const i = THINGS.findLastIndex((t) => kg >= t.kg)
+  const from = i < 0 ? 0 : THINGS[i].kg
+  const next = THINGS[i + 1] ?? null
+  return { i, next, pct: next ? ((kg - from) / (next.kg - from)) * 100 : 100 }
 }
 
 // t = the exercise's 5 thresholds for the user's sex. Anything below Novice is Beginner.

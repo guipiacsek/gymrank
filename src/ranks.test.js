@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { massCompare, totalVolume, e1rm, rankIndex, percentile, topPercent, bestByExercise, fmtMax, fmtGoal, toKg } from './ranks.js'
+import { milestone, THINGS, massCompare, totalVolume, e1rm, rankIndex, percentile, topPercent, bestByExercise, fmtMax, fmtGoal, toKg } from './ranks.js'
 import { EXERCISES, MUSCLES } from './exercises.js'
 
 const bench = EXERCISES.find((e) => e.id === 'bench-press').m // [50, 70, 95, 127.5, 160]
@@ -21,6 +21,13 @@ test('totalVolume and massCompare', () => {
   assert.equal(massCompare(4600), '3 cars')
   assert.equal(massCompare(6000), 'an African elephant')
   assert.equal(massCompare(120000000), '2 Titanics')
+})
+
+test('milestone', () => {
+  assert.deepEqual(milestone(0), { i: -1, next: THINGS[0], pct: 0 })
+  const m = milestone(975) // halfway from grand piano (450) to car (1,500)
+  assert.equal(m.i, 3); assert.equal(m.next.label, 'Car'); assert.equal(m.pct, 50)
+  assert.deepEqual(milestone(6e7), { i: THINGS.length - 1, next: null, pct: 100 })
 })
 
 test('rankIndex', () => {
