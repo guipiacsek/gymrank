@@ -22,6 +22,8 @@ export const effectiveReps = (reps) => Math.min(reps, 20) + Math.max(Math.min(re
 export const e1rm = (kg, reps) => (reps === 1 ? kg : kg * (1 + effectiveReps(reps) / 30))
 
 export const fmtTotal = (kg, unit) => `${Math.round(toUnit(kg, unit)).toLocaleString('en-US')} ${unit}`
+const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
+export const fmtCompact = (kg, unit) => { const v = toUnit(kg, unit); return `${v < 1000 ? Math.round(v) : compact.format(v)} ${unit}` } // 6,547,721 -> "6.5M lb"
 
 // Total mass moved: weight × reps × sets over every logged entry.
 export const totalVolume = (lifts) => lifts.reduce((sum, l) => sum + l.weight_kg * l.reps * (l.sets ?? 1), 0)
@@ -38,8 +40,12 @@ export const THINGS = [
   [36000, 'Loaded semi truck', 'a loaded semi truck', 'loaded semi trucks'],
   [150000, 'Blue whale', 'a blue whale', 'blue whales'],
   [420000, 'Space Station', 'the International Space Station', 'International Space Stations'],
+  [2970000, 'Saturn V rocket', 'a Saturn V rocket', 'Saturn V rockets'], // fuelled, at liftoff
   [10100000, 'Eiffel Tower', 'the Eiffel Tower', 'Eiffel Towers'],
+  [24700000, 'Statue of Liberty', 'the Statue of Liberty and its pedestal', 'Statues of Liberty'], // NPS: pedestal 24,500 t
   [52000000, 'Titanic', 'the Titanic', 'Titanics'],
+  [100000000, 'Aircraft carrier', 'a Nimitz aircraft carrier', 'Nimitz aircraft carriers'],
+  [331000000, 'Empire State Building', 'the Empire State Building', 'Empire State Buildings'],
 ].map(([kg, label, one, many]) => ({ kg, label, one, many }))
 
 // "3 cars" for 4,600 kg: the heaviest thing the total covers, and how many of it. null below the lightest.
@@ -50,13 +56,14 @@ export function massCompare(kg) {
   return n === 1 ? t.one : `${n.toLocaleString('en-US')} ${t.many}`
 }
 
-// Where a total sits on the milestone ladder: index of the last one reached (-1 for none),
-// the next one (null past the last), and the percentage of the way between them.
+// Where a total sits on the milestone ladder: index of the last one reached (-1 for none), the next one
+// (null past the last), pct = share of the next one's weight already moved, and mark = where the last
+// reached milestone sits on that same 0-to-next scale.
 export function milestone(kg) {
   const i = THINGS.findLastIndex((t) => kg >= t.kg)
-  const from = i < 0 ? 0 : THINGS[i].kg
   const next = THINGS[i + 1] ?? null
-  return { i, next, pct: next ? ((kg - from) / (next.kg - from)) * 100 : 100 }
+  if (!next) return { i, next, pct: 100, mark: 100 }
+  return { i, next, pct: (kg / next.kg) * 100, mark: i < 0 ? 0 : (THINGS[i].kg / next.kg) * 100 }
 }
 
 // t = the exercise's 5 thresholds for the user's sex. Anything below Novice is Beginner.

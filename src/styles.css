@@ -205,7 +205,8 @@ h2.section { margin: 28px 4px 12px; }
 
 /* Total lifted milestones */
 .mile { margin-top: 18px; }
-.milebar { height: 8px; border-radius: 999px; background: var(--raised); overflow: hidden; }
+.milebar { position: relative; height: 8px; border-radius: 999px; background: var(--raised); overflow: hidden; }
+.milemark { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--surface); }
 .milebar i { display: block; height: 100%; min-width: 8px; border-radius: 999px; background: var(--accent); transition: width 0.4s; }
 .mileends { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 0.8rem; color: var(--dim); }
 .mileends span:last-child { color: var(--text); font-weight: 600; }
