@@ -1,4 +1,4 @@
--- GymRank database setup. Paste the whole file into Supabase > SQL Editor and click Run. Run it once.
+-- GymRank database setup (fresh projects: run this, then 002 and 003 in order). Paste the whole file into Supabase > SQL Editor and click Run. Run it once.
 
 -- One row per user, created automatically at sign-up.
 create table public.profiles (

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { e1rm, rankIndex, percentile, topPercent, bestByExercise, fmtMax, fmtGoal, toKg } from './ranks.js'
+import { massCompare, totalVolume, e1rm, rankIndex, percentile, topPercent, bestByExercise, fmtMax, fmtGoal, toKg } from './ranks.js'
 import { EXERCISES, MUSCLES } from './exercises.js'
 
 const bench = EXERCISES.find((e) => e.id === 'bench-press').m // [50, 70, 95, 127.5, 160]
@@ -8,6 +8,17 @@ const bench = EXERCISES.find((e) => e.id === 'bench-press').m // [50, 70, 95, 12
 test('e1rm', () => {
   assert.equal(e1rm(100, 1), 100)
   assert.equal(e1rm(90, 10), 120)
+  assert.equal(e1rm(100, 60), e1rm(100, 20)) // high-rep sets are capped
+})
+
+test('totalVolume and massCompare', () => {
+  // 5 sets of 10 at 100 kg, plus an old row with no sets column
+  assert.equal(totalVolume([{ weight_kg: 100, reps: 10, sets: 5 }, { weight_kg: '20', reps: 3 }]), 5060)
+  assert.equal(massCompare(10), null)
+  assert.equal(massCompare(30), 'a golden retriever')
+  assert.equal(massCompare(4600), '3 cars')
+  assert.equal(massCompare(6000), 'an African elephant')
+  assert.equal(massCompare(120000000), '2 Titanics')
 })
 
 test('rankIndex', () => {

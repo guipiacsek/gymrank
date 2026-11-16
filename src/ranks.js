@@ -10,14 +10,44 @@ const PCT = [0, 5, 20, 50, 80, 95, 99.9]
 
 const LB = 2.20462
 export const toKg = (v, unit) => (unit === 'lb' ? v / LB : v)
-const toUnit = (kg, unit) => (unit === 'lb' ? kg * LB : kg)
+export const toUnit = (kg, unit) => (unit === 'lb' ? kg * LB : kg)
 // Maxes round down and thresholds round up, so the screen never shows a tier as reached when it isn't.
 export const fmtMax = (kg, unit) => `${Math.floor(toUnit(kg, unit) + 1e-6)} ${unit}`
 export const fmtGoal = (kg, unit) => `${Math.ceil(toUnit(kg, unit) - 1e-6)} ${unit}`
 export const fmtLogged = (kg, unit) => `${+toUnit(kg, unit).toFixed(1)} ${unit}`
 
-// Epley estimate; a single rep is the lift itself.
-export const e1rm = (kg, reps) => (reps === 1 ? kg : kg * (1 + reps / 30))
+// Epley estimate; a single rep is the lift itself. Reps count up to 20 only: past that the formula
+// stops tracking strength, so a 60-rep machine set doesn't inflate the max. Must match setup SQL.
+export const e1rm = (kg, reps) => (reps === 1 ? kg : kg * (1 + Math.min(reps, 20) / 30))
+
+export const fmtTotal = (kg, unit) => `${Math.round(toUnit(kg, unit)).toLocaleString('en-US')} ${unit}`
+
+// Total mass moved: weight × reps × sets over every logged entry.
+export const totalVolume = (lifts) => lifts.reduce((sum, l) => sum + l.weight_kg * l.reps * (l.sets ?? 1), 0)
+
+// Rough real-world masses in kg, lightest first.
+const THINGS = [
+  [30, 'a golden retriever', 'golden retrievers'],
+  [90, 'a fridge', 'fridges'],
+  [200, 'a motorcycle', 'motorcycles'],
+  [450, 'a grand piano', 'grand pianos'],
+  [1500, 'a car', 'cars'],
+  [6000, 'an African elephant', 'African elephants'],
+  [11000, 'a school bus', 'school buses'],
+  [36000, 'a loaded semi truck', 'loaded semi trucks'],
+  [150000, 'a blue whale', 'blue whales'],
+  [420000, 'the International Space Station', 'International Space Stations'],
+  [10100000, 'the Eiffel Tower', 'Eiffel Towers'],
+  [52000000, 'the Titanic', 'Titanics'],
+]
+
+// "3 cars" for 4,600 kg: the heaviest thing the total covers, and how many of it. null below the lightest.
+export function massCompare(kg) {
+  const t = THINGS.findLast(([m]) => kg >= m)
+  if (!t) return null
+  const n = Math.floor(kg / t[0])
+  return n === 1 ? t[1] : `${n.toLocaleString('en-US')} ${t[2]}`
+}
 
 // t = the exercise's 5 thresholds for the user's sex. Anything below Novice is Beginner.
 export function rankIndex(t, kg) {

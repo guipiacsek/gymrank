@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 import { EXERCISES } from './exercises.js'
-import { RANKS, bestByExercise, fmtLogged, fmtMax, rankIndex, toKg, topPercent } from './ranks.js'
+import { RANKS, bestByExercise, fmtLogged, fmtMax, fmtTotal, massCompare, rankIndex, toKg, topPercent, totalVolume } from './ranks.js'
 import Chart from './Chart.jsx'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
@@ -13,7 +13,7 @@ function Heatmap({ lifts }) {
   useEffect(() => { box.current.scrollLeft = box.current.scrollWidth }, []) // start at the most recent weeks
 
   const counts = {}
-  for (const l of lifts) counts[l.performed_on] = (counts[l.performed_on] || 0) + 1
+  for (const l of lifts) counts[l.performed_on] = (counts[l.performed_on] || 0) + (l.sets ?? 1)
   const end = new Date()
   const d = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 52 * 7 - end.getDay()) // a Sunday, 52 weeks back
   const days = []
@@ -67,6 +67,18 @@ function Progress({ lifts, unit }) {
   )
 }
 
+function TotalLifted({ lifts, unit }) {
+  const kg = totalVolume(lifts)
+  const like = massCompare(kg)
+  return (
+    <div className="card">
+      <h2>Total lifted</h2>
+      <div className="trendval">{fmtTotal(kg, unit)}</div>
+      <p className="dim">{like ? <>That's the weight of <b>{like}</b>.</> : 'Every set you log adds weight × reps × sets here.'}</p>
+    </div>
+  )
+}
+
 function BodyWeight({ unit }) {
   const [rows, setRows] = useState([])
   const [value, setValue] = useState('')
@@ -107,7 +119,7 @@ function BodyWeight({ unit }) {
   )
 }
 
-export default function Profile({ profile, lifts, unit }) {
+export default function Profile({ profile, lifts, unit, theme, setTheme }) {
   const best = bestByExercise(lifts)
   const logged = EXERCISES.filter((e) => best[e.id]).map((e) => ({ ...e, rank: rankIndex(e[profile.sex], best[e.id]) }))
   // A muscle takes the colour of its best-ranked lift.
@@ -121,8 +133,13 @@ export default function Profile({ profile, lifts, unit }) {
           <h1>{profile.username}</h1>
           <p className="dim">{profile.sex === 'm' ? 'Men' : 'Women'}'s division · {logged.length} of {EXERCISES.length} lifts ranked</p>
         </div>
-        <button className="ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
+        <div className="headbtns">
+          <button className="ghost" onClick={() => setTheme(theme === 'pink' ? 'dark' : 'pink')}>{theme === 'pink' ? 'Dark mode' : 'Pink mode'}</button>
+          <button className="ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
+        </div>
       </div>
+
+      <TotalLifted lifts={lifts} unit={unit} />
 
       <div className="card">
         <h2>Muscle ranks</h2>
@@ -148,14 +165,13 @@ export default function Profile({ profile, lifts, unit }) {
               <Icon id={e.id} size={36} />
               <span className="name">
                 <span>{e.name}</span>
-                <small className="dim"><span style={{ color: RANKS[e.rank].color }}>{RANKS[e.rank].name}</span> · Top {topPercent(e[profile.sex], best[e.id])}%</small>
+                <small className="dim"><span className="rk" style={{ '--c': RANKS[e.rank].color }}>{RANKS[e.rank].name}</span> · Top {topPercent(e[profile.sex], best[e.id])}%</small>
               </span>
               <b>{fmtMax(best[e.id], unit)}</b>
             </li>
           ))}
         </ul>
       </div>
-      <p className="dim credit">Rank thresholds adapted from community strength standards by strengthlevel.com. Maxes are estimated one-rep maxes.</p>
     </>
   )
 }

@@ -6,6 +6,11 @@ import { Badge } from './App.jsx'
 import Icon from './Icon.jsx'
 
 const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+// "Nov 15", with the year only when it isn't this year.
+const short = (d) => {
+  const dt = new Date(d + 'T00:00')
+  return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: dt.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' })
+}
 const TOP = [0, 80, 50, 20, 5] // share of lifters at or above each tier
 
 export default function Lift({ profile, lifts, unit, reload }) {
@@ -41,6 +46,7 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
   const t = ex[sex]
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
+  const [sets, setSets] = useState('1')
   const [date, setDate] = useState(today)
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -51,7 +57,7 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
     e.preventDefault()
     setBusy(true); setMsg(null)
     const kg = +toKg(parseFloat(weight), unit).toFixed(2)
-    const { error } = await supabase.from('lifts').insert({ exercise_id: ex.id, weight_kg: kg, reps: +reps, performed_on: date })
+    const { error } = await supabase.from('lifts').insert({ exercise_id: ex.id, weight_kg: kg, reps: +reps, sets: +sets, performed_on: date })
     if (error) setMsg({ bad: true, text: error.message })
     else {
       const est = e1rm(kg, +reps)
@@ -90,7 +96,10 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
           <input type="number" inputMode="decimal" step="any" min="0.5" max={unit === 'lb' ? 2200 : 1000} value={weight} onChange={(e) => setWeight(e.target.value)} required />
         </label>
         <label>Reps
-          <input type="number" inputMode="numeric" step="1" min="1" max="20" value={reps} onChange={(e) => setReps(e.target.value)} required />
+          <input type="number" inputMode="numeric" step="1" min="1" max="100" value={reps} onChange={(e) => setReps(e.target.value)} required />
+        </label>
+        <label>Sets
+          <input type="number" inputMode="numeric" step="1" min="1" max="20" value={sets} onChange={(e) => setSets(e.target.value)} required />
         </label>
         <label>Date
           <input type="date" value={date} max={today()} min="2000-01-01" onChange={(e) => setDate(e.target.value)} required />
@@ -110,7 +119,7 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
             </li>
           ))}
         </ul>
-        {next && <p className="dim">{fmtGoal(t[next] - best, unit)} more to reach <b style={{ color: RANKS[next].color }}>{RANKS[next].name}</b>.</p>}
+        {next && <p className="dim">{fmtGoal(t[next] - best, unit)} more to reach <b className="rk" style={{ '--c': RANKS[next].color }}>{RANKS[next].name}</b>.</p>}
       </div>
 
       <div className="card">
@@ -119,8 +128,8 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
         <ul className="rows">
           {lifts.map((l) => (
             <li key={l.id}>
-              <span className="dim">{l.performed_on}</span>
-              <span>{fmtLogged(l.weight_kg, unit)} × {l.reps}</span>
+              <span className="dim when">{short(l.performed_on)}</span>
+              <span>{l.sets > 1 && `${l.sets} × `}{l.reps} · {fmtLogged(l.weight_kg, unit)}</span>
               <span className="dim">≈ {fmtMax(l.e1rm_kg, unit)}</span>
               <button className="ghost" onClick={() => remove(l.id)} aria-label={`Delete entry from ${l.performed_on}`}>✕</button>
             </li>
