@@ -5,18 +5,19 @@
   --text: #f5f5f7; --dim: #8e8e96; --faint: #5c5c66;
   --accent: #ff4d57; --accent-solid: #dc2e34; --figure: #e9e9ee; --muscle-off: #25252b;
   --bad: #ffb020; --good: #3fcf5e;
-  --base: #19191d; --focus: rgba(255, 255, 255, 0.28); --rank-ink: 100%;
+  --select: #1c1c21; --base: #19191d; --focus: rgba(255, 255, 255, 0.28); --rank-ink: 100%;
   --heat0: #19191d; --heat1: #4a151a; --heat2: #8a1f27; --heat3: #c92c36; --heat4: #ff4d57;
   color-scheme: dark;
 }
-/* Pink mode: pastel pink and white. Rank colours are darkened (--rank-ink) so text stays readable on white. */
+/* Pink mode: cherry blossom background, lighter blush cards, bright maroon for actions and data, salmon for selected states.
+   Rank colours are darkened (--rank-ink) so text stays readable on light surfaces. */
 :root[data-theme='pink'] {
-  --bg: #fff4f8; --surface: #ffffff; --raised: #ffe3ee; --line: rgba(190, 70, 120, 0.13);
-  --text: #3b1d2c; --dim: #8c6274; --faint: #b08597;
-  --accent: #f06d9f; --accent-solid: #e0558d; --figure: #3b1d2c; --muscle-off: #f6e6ed;
-  --bad: #c2410c; --good: #15803d;
-  --base: #fbeef3; --focus: rgba(224, 85, 141, 0.5); --rank-ink: 62%;
-  --heat0: #f8ebf0; --heat1: #fbcadc; --heat2: #f7a3c3; --heat3: #ee7aa7; --heat4: #e0558d;
+  --bg: #ffb7c5; --surface: #ffe4ea; --raised: #ffd0da; --select: #ff91a4; --line: rgba(195, 33, 72, 0.16);
+  --text: #4a0d1e; --dim: #7c2c43; --faint: #9b4a62;
+  --accent: #c32148; --accent-solid: #c32148; --figure: #4a0d1e; --muscle-off: #ffc4cf;
+  --bad: #9a3412; --good: #166534;
+  --base: #ffd3dc; --focus: rgba(195, 33, 72, 0.55); --rank-ink: 55%;
+  --heat0: #ffd0da; --heat1: #ffaab9; --heat2: #ff91a4; --heat3: #e0577a; --heat4: #c32148;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -76,7 +77,7 @@ fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 
 .seg { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 3px; gap: 2px; }
 .seg > * { min-height: 40px; padding: 0 18px; border-radius: 9px; color: var(--dim); display: grid; place-items: center; cursor: pointer; font-size: 0.9rem; }
-.seg > .on { background: var(--raised); color: var(--text); font-weight: 600; }
+.seg > .on { background: var(--select); color: var(--text); font-weight: 600; }
 .seg.small > * { min-height: 30px; padding: 0 11px; font-size: 0.8rem; }
 .seg input { position: absolute; opacity: 0; width: 0; min-height: 0; }
 .seg label:focus-within { outline: 2px solid var(--text); outline-offset: 2px; }
@@ -105,7 +106,7 @@ fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
   .tabs { position: static; background: none; border: 0; padding: 0; backdrop-filter: none; -webkit-backdrop-filter: none; gap: 2px; }
   .tabs button { flex: none; min-height: 36px; border-radius: 10px; }
   .tabs button:hover { color: var(--text); }
-  .tabs .on { background: var(--raised); }
+  .tabs .on { background: var(--select); }
   .app main { padding: 32px 20px 56px; }
 }
 
@@ -120,7 +121,7 @@ fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .chips::-webkit-scrollbar { display: none; }
 .chips button { flex: none; min-height: 34px; border-radius: 999px; color: var(--dim); text-transform: capitalize; font-size: 0.82rem; padding: 0 14px; }
 .chips button:hover { color: var(--text); }
-.chips .on { background: var(--raised); color: var(--text); font-weight: 600; }
+.chips .on { background: var(--select); color: var(--text); font-weight: 600; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .ex { display: grid; justify-items: center; align-content: center; gap: 8px; text-align: center; margin: 0; padding: 20px 10px; font-weight: 500; font-size: 0.88rem; min-height: 158px; line-height: 1.3; }
 button.ex:hover { background: var(--raised); }
