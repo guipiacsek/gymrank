@@ -61,7 +61,7 @@ function Detail({ ex, sex, lifts, best, unit, reload, back }) {
   function edit(l) {
     setEditing(l); setMsg(null)
     setWeight(asInput(l.weight_kg)); setReps(String(l.reps)); setSets(String(l.sets ?? 1)); setDbs(l.dumbbells ?? 2); setDate(l.performed_on)
-    form.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    form.current.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
   }
   const stopEditing = () => { setEditing(null); setDate(null) }
 

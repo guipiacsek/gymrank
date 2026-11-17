@@ -7,6 +7,8 @@
   --bad: #ffb020; --good: #3fcf5e;
   --select: #1c1c21; --base: #19191d; --focus: rgba(255, 255, 255, 0.28); --rank-ink: 100%;
   --heat0: #19191d; --heat1: #4a151a; --heat2: #8a1f27; --heat3: #c92c36; --heat4: #ff4d57;
+  /* Select arrow in --dim; a background image can't use currentColor, so each theme has its own. */
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%238e8e96' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
   color-scheme: dark;
 }
 /* Pink mode: cherry blossom background, lighter blush cards, bright maroon for actions and data, salmon for selected states.
@@ -18,6 +20,7 @@
   --bad: #9a3412; --good: #166534;
   --base: #ffd3dc; --focus: rgba(195, 33, 72, 0.55); --rank-ink: 55%;
   --heat0: #ffd0da; --heat1: #ffaab9; --heat2: #ff91a4; --heat3: #e0577a; --heat4: #c32148;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%237c2c43' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -41,8 +44,18 @@ small { font-size: 0.78rem; }
 
 /* Controls: 16px text stops iPhone Safari zooming on focus; 44px+ height is the touch-target minimum. */
 button, input, select { font: inherit; color: inherit; }
-button { cursor: pointer; white-space: nowrap; border: 0; background: none; border-radius: 12px; min-height: 44px; padding: 0 14px; transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s; }
+button { cursor: pointer; white-space: nowrap; border: 0; background: none; border-radius: 12px; min-height: 44px; padding: 0 14px;
+  transition-property: background-color, color, border-color, opacity, scale; transition-duration: 150ms; transition-timing-function: ease-out; }
 button:disabled { opacity: 0.5; }
+/* Press feedback: a small scale, or a dim where the person asked for less motion. */
+@media (prefers-reduced-motion: no-preference) { button:not(:disabled):active { scale: 0.96; } }
+@media (prefers-reduced-motion: reduce) { button:not(:disabled):active { opacity: 0.7; } }
+/* Hover only where a real pointer can hover: on iPhone, :hover sticks after a tap. */
+@media (hover: hover) {
+  .primary:hover { filter: brightness(1.08); }
+  .ghost:hover, .chips button:hover, .tabs button:hover { color: var(--text); }
+  button.ex:hover { background: var(--raised); }
+}
 :focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 input, select {
   width: 100%; min-height: 48px; padding: 0 14px; border-radius: 12px; font-size: 16px;
@@ -54,15 +67,12 @@ input[type='date'] { -webkit-appearance: none; appearance: none; display: block;
 input[type='date']::-webkit-date-and-time-value { text-align: left; margin: 0; }
 input::placeholder { color: var(--faint); }
 select { appearance: none; -webkit-appearance: none; padding-right: 36px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%238e8e96' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
+  background-image: var(--chevron);
   background-repeat: no-repeat; background-position: right 14px center; background-size: 12px; }
 label, legend { display: grid; gap: 8px; font-size: 0.8rem; color: var(--dim); padding: 0; }
 fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .primary { background: var(--accent-solid); color: #fff; font-weight: 600; min-height: 48px; }
-.primary:hover { filter: brightness(1.08); }
-.primary:active { opacity: 0.85; }
 .ghost { color: var(--dim); font-size: 0.9rem; }
-.ghost:hover { color: var(--text); }
 
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; margin-bottom: 12px; }
 .logo { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.03em; }
@@ -76,7 +86,7 @@ fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 }
 
 .seg { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 3px; gap: 2px; }
-.seg > * { min-height: 40px; padding: 0 18px; border-radius: 9px; color: var(--dim); display: grid; place-items: center; cursor: pointer; font-size: 0.9rem; }
+.seg > * { min-height: 40px; padding: 0 18px; border-radius: 8px; /* 12px outer = 8 + 3px padding + 1px border */ color: var(--dim); display: grid; place-items: center; cursor: pointer; font-size: 0.9rem; }
 .seg > .on { background: var(--select); color: var(--text); font-weight: 600; }
 .seg.small > * { min-height: 30px; padding: 0 11px; font-size: 0.8rem; }
 .seg input { position: absolute; opacity: 0; width: 0; min-height: 0; }
@@ -105,7 +115,6 @@ fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 @media (min-width: 720px) {
   .tabs { position: static; background: none; border: 0; padding: 0; backdrop-filter: none; -webkit-backdrop-filter: none; gap: 2px; }
   .tabs button { flex: none; min-height: 36px; border-radius: 10px; }
-  .tabs button:hover { color: var(--text); }
   .tabs .on { background: var(--select); }
   .app main { padding: 32px 20px 56px; }
 }
@@ -120,11 +129,9 @@ fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 16px; padding-inline: 16px; }
 .chips::-webkit-scrollbar { display: none; }
 .chips button { flex: none; min-height: 34px; border-radius: 999px; color: var(--dim); text-transform: capitalize; font-size: 0.82rem; padding: 0 14px; }
-.chips button:hover { color: var(--text); }
 .chips .on { background: var(--select); color: var(--text); font-weight: 600; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .ex { display: grid; justify-items: center; align-content: center; gap: 8px; text-align: center; margin: 0; padding: 20px 10px; font-weight: 500; font-size: 0.88rem; min-height: 158px; line-height: 1.3; }
-button.ex:hover { background: var(--raised); }
 
 .back { padding-left: 0; margin-top: -8px; }
 .hero { display: flex; gap: 20px; align-items: center; padding: 24px 20px; }
