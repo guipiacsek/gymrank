@@ -148,6 +148,37 @@ function BodyWeight({ unit }) {
   )
 }
 
+// Two steps on purpose: the first click only explains what will be lost.
+function DeleteAccount({ count }) {
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function destroy() {
+    setBusy(true); setError('')
+    const { error } = await supabase.rpc('delete_my_account')
+    if (error) { setBusy(false); return setError(error.message) }
+    await supabase.auth.signOut({ scope: 'local' }) // the account is gone, so only the saved session needs clearing
+  }
+
+  return (
+    <div className="card danger">
+      <h2>Account</h2>
+      {!asking ? <>
+        <p className="dim">Permanently delete your account and everything in it.</p>
+        <button className="ghost warn" onClick={() => setAsking(true)}>Delete account</button>
+      </> : <>
+        <p>This permanently deletes your account, all {count} logged {count === 1 ? 'entry' : 'entries'} and your body weight history, and removes you from every leaderboard. <b>It can't be undone.</b></p>
+        <div className="dangerbtns">
+          <button className="warnsolid" disabled={busy} onClick={destroy}>{busy ? 'Deleting…' : 'Delete forever'}</button>
+          <button className="ghost" disabled={busy} onClick={() => setAsking(false)}>Cancel</button>
+        </div>
+      </>}
+      {error && <p className="error" role="alert">{error}</p>}
+    </div>
+  )
+}
+
 export default function Profile({ profile, lifts, unit, theme, setTheme }) {
   const best = bestByExercise(lifts)
   const logged = EXERCISES.filter((e) => best[e.id]).map((e) => ({ ...e, rank: rankIndex(e[profile.sex], best[e.id]) }))
@@ -201,6 +232,8 @@ export default function Profile({ profile, lifts, unit, theme, setTheme }) {
           ))}
         </ul>
       </div>
+
+      <DeleteAccount count={lifts.length} />
     </>
   )
 }

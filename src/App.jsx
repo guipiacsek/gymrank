@@ -6,6 +6,7 @@ import Auth, { NewPassword } from './Auth.jsx'
 import Lift from './Lift.jsx'
 import Leaderboard from './Leaderboard.jsx'
 import Profile from './Profile.jsx'
+import Privacy from './Privacy.jsx'
 import { applyTheme } from './theme.js'
 
 // Dev-only (localhost/?demo): the real screens with sample data and no login, for checking the design.
@@ -38,6 +39,12 @@ export default function App() {
   const [lifts, setLifts] = useState(DEMO_LIFTS)
   const [error, setError] = useState('')
   const [tab, setTab] = useState('lift')
+  const [privacy, setPrivacy] = useState(location.hash === '#privacy')
+  useEffect(() => {
+    const onHash = () => { setPrivacy(location.hash === '#privacy'); scrollTo(0, 0) }
+    addEventListener('hashchange', onHash)
+    return () => removeEventListener('hashchange', onHash)
+  }, [])
   const [unit, setUnitState] = useState(() => {
     try { return localStorage.getItem('unit') === 'kg' ? 'kg' : 'lb' } catch { return 'lb' }
   })
@@ -74,6 +81,7 @@ export default function App() {
     loadLifts()
   }, [uid, loadLifts])
 
+  if (privacy) return <Privacy />
   if (!DEMO && session === undefined) return <div className="center dim">Loading…</div>
   if (!DEMO && !session) return <Auth notice={notice} />
   if (recovery) return <NewPassword done={() => setRecovery(false)} />
@@ -99,6 +107,7 @@ export default function App() {
         <footer className="foot">
           <p><b>Train safe.</b> Not sure you can lift it? Don't test it. Log a set you can do for reps and GymRank estimates your max, or use a spotter and safety bars.</p>
           <p>GymRank is for fun and motivation, not medical or training advice. Check with a doctor before starting a new program. Maxes are estimates, ranks are adapted from strengthlevel.com community standards, and leaderboard entries are self-reported.</p>
+          <p><a href="#privacy">Privacy Policy</a></p>
         </footer>
       </main>
     </div>

@@ -60,10 +60,12 @@ export default function Auth({ notice }) {
         </label>}
         {msg && <p className={msg.bad ? 'error' : 'ok'} role="alert">{msg.text}</p>}
         <button className="primary" disabled={busy}>{busy ? 'Please wait…' : TITLES[mode]}</button>
+        {mode === 'signup' && <p className="fine">By creating an account you agree to the <a href="#privacy">Privacy Policy</a> and confirm you are 16 or older.</p>}
         {mode === 'login' && <button type="button" className="ghost" onClick={() => go('forgot')}>Forgot password?</button>}
         <button type="button" className="ghost" onClick={() => go(mode === 'login' ? 'signup' : 'login')}>
           {mode === 'login' ? 'New here? Create an account' : 'Back to log in'}
         </button>
+        {mode !== 'signup' && <p className="fine"><a href="#privacy">Privacy Policy</a></p>}
       </form>
     </div>
   )

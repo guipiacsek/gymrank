@@ -235,3 +235,19 @@ h2.section { margin: 28px 4px 12px; }
 .miles .mark { min-width: 40px; text-align: right; }
 .miles .done .mark { color: var(--accent); }
 .miles li .dim { color: inherit; font-weight: 400; }
+
+/* Links, privacy policy, delete account */
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 3px; }
+a.ghost { text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+.fine { font-size: 0.78rem; color: var(--faint); text-align: center; margin: 0; }
+.legal { max-width: 680px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom)); }
+.legal .back { margin: 0 0 8px; }
+.legal h1 { margin-bottom: 4px; }
+.legal h3 { font-size: 1rem; font-weight: 600; margin: 28px 0 0; }
+.legal p, .legal li { color: var(--dim); line-height: 1.6; }
+.legal ul { margin-top: 8px; display: grid; gap: 8px; }
+.legal li { padding-left: 16px; position: relative; }
+.legal li::before { content: ''; position: absolute; left: 2px; top: 0.7em; width: 5px; height: 5px; border-radius: 50%; background: var(--faint); }
+.danger .warn { color: var(--bad); padding-left: 0; margin-top: 4px; margin-bottom: -10px; }
+.dangerbtns { display: flex; gap: 8px; margin-top: 16px; }
+.warnsolid { background: var(--bad); color: var(--bg); font-weight: 600; }
