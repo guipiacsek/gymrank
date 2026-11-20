@@ -38,10 +38,13 @@ export default function App() {
   const [profile, setProfile] = useState(DEMO ? DEMO_PROFILE : null)
   const [lifts, setLifts] = useState(DEMO_LIFTS)
   const [error, setError] = useState('')
-  const [tab, setTab] = useState('lift')
-  const [privacy, setPrivacy] = useState(location.hash === '#privacy')
+  // The page lives in the address (#board, #lift/bench-press, #privacy), so the browser's back button works.
+  const [path, setPath] = useState(() => location.hash.slice(1))
+  const [page, sub] = path.split('/')
+  const tab = TABS.some(([k]) => k === page) ? page : 'lift'
+  const go = (to) => { location.hash = to }
   useEffect(() => {
-    const onHash = () => { setPrivacy(location.hash === '#privacy'); scrollTo(0, 0) }
+    const onHash = () => { setPath(location.hash.slice(1)); scrollTo(0, 0) }
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
   }, [])
@@ -81,7 +84,7 @@ export default function App() {
     loadLifts()
   }, [uid, loadLifts])
 
-  if (privacy) return <Privacy />
+  if (page === 'privacy') return <Privacy />
   if (!DEMO && session === undefined) return <div className="center dim">Loading…</div>
   if (!DEMO && !session) return <Auth notice={notice} />
   if (recovery) return <NewPassword done={() => setRecovery(false)} />
@@ -91,7 +94,7 @@ export default function App() {
       <header className="top">
         <div className="logo">Gym<b>Rank</b></div>
         <nav className="tabs">
-          {TABS.map(([k, label]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{label}</button>)}
+          {TABS.map(([k, label]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => go(k)}>{label}</button>)}
         </nav>
         <div className="seg small" role="group" aria-label="Weight unit">
           {['lb', 'kg'].map((u) => <button key={u} className={unit === u ? 'on' : ''} onClick={() => setUnit(u)}>{u}</button>)}
@@ -100,7 +103,7 @@ export default function App() {
       <main>
         {error && <p className="error" role="alert">{error}</p>}
         {!profile ? !error && <p className="dim">Loading…</p>
-          : tab === 'lift' ? <Lift profile={profile} lifts={lifts} unit={unit} reload={loadLifts} />
+          : tab === 'lift' ? <Lift profile={profile} lifts={lifts} unit={unit} reload={loadLifts} sel={sub} open={(id) => go(id ? `lift/${id}` : 'lift')} />
           : tab === 'board' ? <Leaderboard profile={profile} uid={uid} unit={unit} />
           : <Profile profile={profile} lifts={lifts} unit={unit} theme={theme} setTheme={setTheme} />}
         {!profile && error && <button className="ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>}

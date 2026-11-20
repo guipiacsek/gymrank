@@ -13,13 +13,12 @@ const short = (d) => {
 }
 const TOP = [0, 80, 50, 20, 5] // share of lifters at or above each tier
 
-export default function Lift({ profile, lifts, unit, reload }) {
-  const [sel, setSel] = useState(null)
+export default function Lift({ profile, lifts, unit, reload, sel, open }) {
   const [q, setQ] = useState('')
   const [muscle, setMuscle] = useState('all')
   const best = bestByExercise(lifts)
 
-  if (sel) return <Detail ex={byId[sel]} sex={profile.sex} lifts={lifts.filter((l) => l.exercise_id === sel)} best={best[sel]} unit={unit} reload={reload} back={() => setSel(null)} />
+  if (byId[sel]) return <Detail key={sel} ex={byId[sel]} sex={profile.sex} lifts={lifts.filter((l) => l.exercise_id === sel)} best={best[sel]} unit={unit} reload={reload} back={() => open(null)} />
 
   const shown = EXERCISES.filter((e) => (muscle === 'all' || e.muscle === muscle) && e.name.toLowerCase().includes(q.trim().toLowerCase()))
   return (
@@ -30,7 +29,7 @@ export default function Lift({ profile, lifts, unit, reload }) {
       </div>
       <div className="grid">
         {shown.map((e) => (
-          <button key={e.id} className="card ex" onClick={() => setSel(e.id)}>
+          <button key={e.id} className="card ex" onClick={() => open(e.id)}>
             <Icon id={e.id} />
             <span>{e.name}</span>
             {best[e.id] && <Badge rank={rankIndex(e[profile.sex], best[e.id])} />}
